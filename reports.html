@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>التقارير · Call Intelligence Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<main class="app">
+  <div id="breadcrumb"></div>
+
+  <div id="list-view">
+    <section class="page-head">
+      <div>
+        <h1 class="page-title">مكتبة <span class="accent-text">التقارير</span></h1>
+        <p class="page-subtitle">تقارير تحليلية تلقائية ومخصصة. كل تقرير يربط بين المكالمات والمتحدثين والكلمات المفتاحية لاستخلاص الأنماط.</p>
+      </div>
+      <div class="page-meta">
+        <div>TOTAL · <strong id="total">—</strong></div>
+        <div style="margin-top: 4px;">LIVE · <strong>API DATA</strong></div>
+      </div>
+    </section>
+
+    <div class="search-bar">
+      <input type="text" class="search-input" id="search" placeholder="ابحث في التقارير...">
+      <div class="btn-group">
+        <span class="filter-chip active" data-filter="all">الكل</span>
+        <span class="filter-chip" data-filter="يومي">يومي</span>
+        <span class="filter-chip" data-filter="أسبوعي">أسبوعي</span>
+        <span class="filter-chip" data-filter="شبكة">شبكة</span>
+        <span class="filter-chip" data-filter="صوتي">صوتي</span>
+      </div>
+      <button class="btn primary">+ تقرير جديد</button>
+    </div>
+
+    <div class="cards-grid" id="reports-grid"></div>
+  </div>
+
+  <div id="detail-view" style="display:none;">
+    <section class="page-head">
+      <div>
+        <h1 class="page-title" id="d-title">—</h1>
+        <p class="page-subtitle" id="d-subtitle">—</p>
+      </div>
+      <div class="btn-group">
+        <button class="btn" onclick="showList()">← العودة</button>
+        <button class="btn ghost">طباعة</button>
+        <button class="btn primary">تنزيل PDF</button>
+      </div>
+    </section>
+
+    <section class="metrics">
+      <div class="metric"><div class="metric-label">// Calls Analyzed</div><div class="metric-value" id="m-total">—</div><div class="metric-delta">FULL DATASET</div></div>
+      <div class="metric"><div class="metric-label">// Patterns Found</div><div class="metric-value">٨</div><div class="metric-delta">↗ +2 new</div></div>
+      <div class="metric"><div class="metric-label">// Flagged Terms</div><div class="metric-value" id="m-coded">—</div><div class="metric-delta down">◆ review</div></div>
+      <div class="metric"><div class="metric-label">// Confidence</div><div class="metric-value" id="m-avg">—</div><div class="metric-delta">HIGH</div></div>
+    </section>
+
+    <div class="panel" style="margin-bottom: 20px;">
+      <div class="panel-head">
+        <div class="panel-title">الملخص التنفيذي</div>
+        <div class="panel-subtitle">EXECUTIVE SUMMARY</div>
+      </div>
+      <div class="panel-body" style="padding: 22px;" id="summary-body">—</div>
+    </div>
+
+    <div class="section-title"><h2><span class="section-accent">//</span>الكلمات المشفّرة المكتشفة</h2></div>
+    <div class="panel">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>المصطلح</th>
+            <th>التكرار</th>
+            <th>أول ظهور</th>
+            <th>آخر ظهور</th>
+            <th>المكالمات</th>
+            <th>المستوى</th>
+          </tr>
+        </thead>
+        <tbody id="coded-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="section-title"><h2><span class="section-accent">//</span>المكالمات المُعلَّمة</h2></div>
+    <div class="panel">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 90px;">المعرّف</th>
+            <th>العنوان</th>
+            <th>العلامات</th>
+            <th>التاريخ</th>
+            <th>الإجراء</th>
+          </tr>
+        </thead>
+        <tbody id="flagged-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script src="assets/shared.js"></script>
+<script>
+  mountTopbar('reports');
+
+  document.getElementById('breadcrumb').innerHTML = buildBreadcrumb([
+    { label: 'الرئيسية', url: 'index.html' },
+    { label: 'التقارير' }
+  ]);
+
+  const listView = document.getElementById('list-view');
+  const detailView = document.getElementById('detail-view');
+
+  const icons = {
+    calendar: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+    network: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="7" y2="16"/><line x1="12" y1="8" x2="17" y2="16"/></svg>',
+    alert: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    voice: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>',
+    clock: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+    stats: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'
+  };
+
+  async function renderList(filter = 'all', search = '') {
+    const grid = document.getElementById('reports-grid');
+    showLoading(grid);
+
+    try {
+      const params = {};
+      if (filter !== 'all') params.filter = filter;
+      if (search) params.search = search;
+
+      const reports = await api.reports(params);
+      document.getElementById('total').textContent = reports.length;
+
+      grid.innerHTML = '';
+      if (reports.length === 0) {
+        grid.innerHTML = `<div class="empty" style="grid-column: 1 / -1;">لا توجد تقارير مطابقة</div>`;
+        return;
+      }
+
+      reports.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'report-card';
+        card.onclick = () => showDetail(r.id);
+        card.innerHTML = `
+          <div class="report-head">
+            <div style="flex: 1;">
+              <div class="report-title">${r.title}</div>
+              <div class="report-desc">${r.summary || 'تحليل تفصيلي شامل مع الرسوم البيانية والإحصائيات.'}</div>
+            </div>
+            <div class="report-icon">${icons[r.icon] || icons.stats}</div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span class="badge badge-accent">${r.report_type}</span>
+            <span class="badge badge-gray">${r.size}</span>
+          </div>
+          <div class="report-foot">
+            <span>${r.date}</span>
+            <span>${r.id}</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    } catch (e) {
+      grid.innerHTML = `<div class="empty" style="grid-column: 1 / -1;">لا يمكن تحميل التقارير — تحقق من الخادم</div>`;
+    }
+  }
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      renderList(chip.dataset.filter, document.getElementById('search').value);
+    });
+  });
+
+  let searchTimer;
+  document.getElementById('search').addEventListener('input', (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      const filter = document.querySelector('.filter-chip.active')?.dataset.filter || 'all';
+      renderList(filter, e.target.value);
+    }, 250);
+  });
+
+  async function showDetail(id) {
+    try {
+      const r = await api.report(id);
+
+      document.getElementById('breadcrumb').innerHTML = buildBreadcrumb([
+        { label: 'الرئيسية', url: 'index.html' },
+        { label: 'التقارير', url: 'reports.html' },
+        { label: r.id }
+      ]);
+
+      document.getElementById('d-title').textContent = r.title;
+      document.getElementById('d-subtitle').textContent = `${r.id} · ${r.date} · ${r.report_type} · ${r.size}`;
+
+      // Load stats from API
+      const stats = await api.stats();
+      const codedTerms = await api.codedTerms();
+      const allCalls = await api.calls();
+      const flaggedCalls = allCalls.filter(c => c.flags > 0).sort((a, b) => b.flags - a.flags);
+
+      document.getElementById('m-total').textContent = stats.total_calls;
+      document.getElementById('m-coded').textContent = codedTerms.length;
+      document.getElementById('m-avg').textContent = stats.avg_accuracy + '%';
+
+      // Executive summary (dynamic)
+      const highRisk = codedTerms.filter(t => t.risk === 'high').length;
+      document.getElementById('summary-body').innerHTML = `
+        <p style="margin-bottom: 14px; line-height: 1.9;">خلال الفترة من 17 أبريل إلى 21 أبريل 2026، تمت معالجة <strong style="color: var(--accent);">${stats.total_calls} مكالمة</strong> شارك فيها <strong style="color: var(--accent);">${stats.total_speakers} متحدثين</strong>، وكشف التحليل عن <strong style="color: var(--amber);">${codedTerms.length} كلمة مشبوهة</strong>، منها <strong style="color: var(--red);">${highRisk}</strong> ذات مستوى خطورة عالٍ.</p>
+        <p style="margin-bottom: 14px; line-height: 1.9; color: var(--text-2);">عُلِّمت <strong style="color: var(--coral);">${flaggedCalls.length} مكالمات</strong> تحتاج لمراجعة بشرية. متوسط دقة التفريغ بلغ ${stats.avg_accuracy}%.</p>
+        <p style="line-height: 1.9; color: var(--text-2);">التوصية: مراجعة المكالمات ذات أعلى عدد من الإشارات يدوياً، وتحديث قاعدة بيانات الكلمات المشفّرة لتعزيز الكشف التلقائي.</p>
+      `;
+
+      // Coded terms table
+      const codedTbody = document.getElementById('coded-tbody');
+      codedTbody.innerHTML = '';
+      codedTerms.forEach(t => {
+        const tr = document.createElement('tr');
+        const riskBadge = t.risk === 'high' ? 'badge-red' : t.risk === 'medium' ? 'badge-amber' : 'badge-gray';
+        const riskLabel = t.risk === 'high' ? '⚠ عالي' : t.risk === 'medium' ? '◆ متوسط' : '— منخفض';
+        tr.innerHTML = `
+          <td><span style="font-weight: 500; color: var(--amber);">"${t.term}"</span></td>
+          <td><span style="font-family: var(--font-mono); direction: ltr;">×${t.occurrences}</span></td>
+          <td style="font-family: var(--font-mono); color: var(--text-2); direction: ltr;">${t.first_seen}</td>
+          <td style="font-family: var(--font-mono); color: var(--text-2); direction: ltr;">${t.last_seen}</td>
+          <td>
+            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+              ${t.call_ids.map(cid => `<a href="calls.html?id=${cid}" class="id-cell" style="background: var(--bg-2); padding: 2px 8px; border-radius: 4px; font-size: 10px; text-decoration: none;">${cid}</a>`).join('')}
+            </div>
+          </td>
+          <td><span class="badge ${riskBadge}">${riskLabel}</span></td>
+        `;
+        codedTbody.appendChild(tr);
+      });
+
+      // Flagged calls
+      const flaggedTbody = document.getElementById('flagged-tbody');
+      flaggedTbody.innerHTML = '';
+      flaggedCalls.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.onclick = () => window.location.href = `calls.html?id=${c.id}`;
+        tr.innerHTML = `
+          <td><span class="id-cell">${c.id}</span></td>
+          <td><div style="font-weight: 500;">${c.title}</div></td>
+          <td><span class="badge badge-amber">◆ ${c.flags} علامة</span></td>
+          <td style="font-family: var(--font-mono); font-size: 12px; color: var(--text-2); direction: ltr;">${c.date}</td>
+          <td><a href="calls.html?id=${c.id}" class="btn ghost" style="font-size: 11px; padding: 4px 10px; text-decoration: none;">فتح ↗</a></td>
+        `;
+        flaggedTbody.appendChild(tr);
+      });
+
+      listView.style.display = 'none';
+      detailView.style.display = 'block';
+      history.replaceState(null, '', `reports.html?id=${r.id}`);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+      alert('لا يمكن تحميل التقرير');
+    }
+  }
+
+  function showList() {
+    detailView.style.display = 'none';
+    listView.style.display = 'block';
+    document.getElementById('breadcrumb').innerHTML = buildBreadcrumb([
+      { label: 'الرئيسية', url: 'index.html' },
+      { label: 'التقارير' }
+    ]);
+    history.replaceState(null, '', 'reports.html');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  window.showList = showList;
+
+  renderList();
+
+  const urlId = getQueryParam('id');
+  if (urlId) showDetail(urlId);
+</script>
+</body>
+</html>

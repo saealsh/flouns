@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المكالمات · Call Intelligence Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<main class="app">
+
+  <div id="list-view">
+    <div id="breadcrumb-list"></div>
+    <section class="page-head">
+      <div>
+        <h1 class="page-title">قاعدة بيانات <span class="accent-text">المكالمات</span></h1>
+        <p class="page-subtitle">كل المكالمات المسجلة والمحلّلة. اضغط على أي مكالمة لفتح التفريغ الكامل والكيانات المستخلصة.</p>
+      </div>
+      <div class="page-meta">
+        <div>TOTAL · <strong id="total-count">—</strong></div>
+        <div style="margin-top: 4px;">LIVE · <strong>API DATA</strong></div>
+      </div>
+    </section>
+
+    <div class="search-bar">
+      <input type="text" class="search-input" id="search" placeholder="ابحث عن مكالمة، متحدث، أو كلمة مفتاحية...">
+      <div class="btn-group">
+        <span class="filter-chip active" data-filter="all">الكل</span>
+        <span class="filter-chip" data-filter="flagged">مُعلَّمة</span>
+        <span class="filter-chip" data-filter="today">اليوم</span>
+        <span class="filter-chip" data-filter="high-conf">دقة عالية</span>
+      </div>
+      <a href="uploads.html" class="btn primary" style="text-decoration: none;">+ رفع مكالمة</a>
+    </div>
+
+    <div class="panel">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 90px;">المعرّف</th>
+            <th>العنوان</th>
+            <th>المتحدثون</th>
+            <th>التاريخ</th>
+            <th>المدة</th>
+            <th>الدقة</th>
+            <th>العلامات</th>
+          </tr>
+        </thead>
+        <tbody id="calls-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="detail-view" style="display:none;">
+    <div id="breadcrumb-detail"></div>
+    <section class="page-head">
+      <div>
+        <h1 class="page-title" id="d-title">—</h1>
+        <p class="page-subtitle" id="d-subtitle">—</p>
+      </div>
+      <div class="btn-group">
+        <button class="btn" onclick="showList()">← العودة للقائمة</button>
+        <button class="btn primary">مراجعة بشرية</button>
+      </div>
+    </section>
+
+    <section class="metrics">
+      <div class="metric">
+        <div class="metric-label">// Duration</div>
+        <div class="metric-value" id="d-duration">—</div>
+        <div class="metric-delta" id="d-duration-sec">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">// Speakers</div>
+        <div class="metric-value" id="d-speakers">—</div>
+        <div class="metric-delta" id="d-speakers-names">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">// Confidence</div>
+        <div class="metric-value" id="d-confidence">—</div>
+        <div class="metric-delta" id="d-confidence-label">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">// Flags</div>
+        <div class="metric-value" id="d-flags">—</div>
+        <div class="metric-delta down" id="d-flags-label">—</div>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px;">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">التفريغ النصي</div>
+            <div class="panel-subtitle">TIMESTAMPED · DIARIZED</div>
+          </div>
+          <div class="btn-group">
+            <button class="btn">▷ تشغيل</button>
+            <button class="btn ghost">تصدير</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="waveform" id="d-waveform"></div>
+          <div class="transcript-lines" id="d-transcript"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">الكيانات المستخلصة</div>
+          <div class="panel-subtitle">NER · NLP</div>
+        </div>
+        <div class="panel-body" id="d-entities"></div>
+      </div>
+    </div>
+
+    <div class="section-title">
+      <h2><span class="section-accent">//</span>مكالمات مرتبطة</h2>
+    </div>
+
+    <div class="panel">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 90px;">المعرّف</th>
+            <th>العنوان</th>
+            <th>العلاقة</th>
+            <th>التاريخ</th>
+            <th>الدقة</th>
+          </tr>
+        </thead>
+        <tbody id="d-related"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script src="assets/shared.js"></script>
+<script>
+  mountTopbar('calls');
+
+  const listView = document.getElementById('list-view');
+  const detailView = document.getElementById('detail-view');
+
+  // Preload speakers for color mapping
+  let speakersList = [];
+  api.speakers().then(sp => { speakersList = sp; }).catch(() => {});
+
+  document.getElementById('breadcrumb-list').innerHTML = buildBreadcrumb([
+    { label: 'الرئيسية', url: 'index.html' },
+    { label: 'المكالمات' }
+  ]);
+
+  async function renderList(filter = 'all', search = '') {
+    const tbody = document.getElementById('calls-tbody');
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty">جارٍ التحميل...</div></td></tr>';
+
+    try {
+      const params = {};
+      if (filter !== 'all') params.filter = filter;
+      if (search) params.search = search;
+
+      const calls = await api.calls(params);
+      document.getElementById('total-count').textContent = calls.length;
+
+      tbody.innerHTML = '';
+      if (calls.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty">لا توجد نتائج مطابقة</div></td></tr>`;
+        return;
+      }
+
+      calls.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.onclick = () => showDetail(c.id);
+        const flagsBadge = c.flags > 0
+          ? `<span class="badge badge-amber">◆ ${c.flags}</span>`
+          : `<span class="badge badge-gray">—</span>`;
+
+        tr.innerHTML = `
+          <td><span class="id-cell">${c.id}</span></td>
+          <td>
+            <div style="font-weight: 500; margin-bottom: 2px;">${c.title}</div>
+            <div style="font-size: 11px; color: var(--text-3);">${c.topic || ''}</div>
+          </td>
+          <td>
+            <div style="display: flex;">
+              ${c.speakers.slice(0, 3).map(sp => {
+                const color = speakerColorClassSync(sp, speakersList);
+                return `<span class="user-av ${color}" style="margin-left: -6px; width: 28px; height: 28px; font-size: 10px;">${sp.substring(0,2)}</span>`;
+              }).join('')}
+              ${c.speakers.length > 3 ? `<span class="user-av gray" style="margin-left: -6px; width: 28px; height: 28px; font-size: 10px;">+${c.speakers.length-3}</span>` : ''}
+            </div>
+          </td>
+          <td style="font-family: var(--font-mono); font-size: 12px; color: var(--text-2); direction: ltr;">${c.date}<br><span style="font-size: 10px; color: var(--text-3);">${c.time}</span></td>
+          <td style="font-family: var(--font-mono); color: var(--text-2); direction: ltr;">${c.duration}</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="conf-bar" style="width: 60px;"><div class="conf-fill" style="width: ${c.confidence}%"></div></div>
+              <span style="font-family: var(--font-mono); font-size: 12px; color: ${confidenceColor(c.confidence)}; direction: ltr;">${c.confidence}%</span>
+            </div>
+          </td>
+          <td>${flagsBadge}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty">لا يمكن تحميل المكالمات — تحقق من الخادم</div></td></tr>`;
+    }
+  }
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      renderList(chip.dataset.filter, document.getElementById('search').value);
+    });
+  });
+
+  let searchTimer;
+  document.getElementById('search').addEventListener('input', (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      const activeFilter = document.querySelector('.filter-chip.active')?.dataset.filter || 'all';
+      renderList(activeFilter, e.target.value);
+    }, 250);
+  });
+
+  async function showDetail(id) {
+    try {
+      const c = await api.call(id);
+
+      document.getElementById('breadcrumb-detail').innerHTML = buildBreadcrumb([
+        { label: 'الرئيسية', url: 'index.html' },
+        { label: 'المكالمات', url: '#' },
+        { label: c.id }
+      ]);
+      const callsLink = document.getElementById('breadcrumb-detail').querySelector('a[href="#"]');
+      if (callsLink) callsLink.onclick = (e) => { e.preventDefault(); showList(); };
+
+      document.getElementById('d-title').textContent = c.title;
+      document.getElementById('d-subtitle').textContent =
+        `${c.id} · ${c.date} · ${c.time} · الموضوع: ${c.topic || '—'}`;
+
+      document.getElementById('d-duration').textContent = c.duration;
+      document.getElementById('d-duration-sec').textContent = `${c.duration_sec} sec`;
+      document.getElementById('d-speakers').textContent = c.speakers.length;
+      document.getElementById('d-speakers-names').textContent = c.speakers.join(' · ');
+      document.getElementById('d-confidence').textContent = c.confidence + '%';
+      const cLabel = c.confidence >= 93 ? '✓ عالية' : c.confidence >= 88 ? '◆ متوسطة' : '⚠ منخفضة';
+      document.getElementById('d-confidence-label').textContent = cLabel;
+      document.getElementById('d-flags').textContent = c.flags;
+      document.getElementById('d-flags-label').textContent =
+        c.flags > 0 ? 'كلمات مشبوهة' : 'لا توجد إشارات';
+
+      buildWaveform('d-waveform');
+
+      // Transcript
+      const transcriptEl = document.getElementById('d-transcript');
+      transcriptEl.innerHTML = '';
+      (c.transcript_lines || []).forEach(t => {
+        const confClass = t.confidence >= 0.9 ? 'high' : t.confidence >= 0.85 ? 'mid' : 'low';
+        const confPct = Math.round(t.confidence * 100);
+        const div = document.createElement('div');
+        div.className = 'msg';
+        div.innerHTML = `
+          <div class="msg-avatar ${t.speaker_slot}">${t.speaker_name.substring(0,2)}</div>
+          <div class="msg-content">
+            <div class="msg-meta">
+              <span class="msg-speaker">${t.speaker_name}</span>
+              <span class="msg-time">${t.time_stamp}</span>
+              <span class="msg-conf ${confClass}">${confPct}%</span>
+            </div>
+            <div class="msg-text">${t.text}</div>
+          </div>
+        `;
+        transcriptEl.appendChild(div);
+      });
+
+      // Entities grouped by type
+      const grouped = {};
+      (c.entities || []).forEach(e => {
+        if (!grouped[e.entity_type]) grouped[e.entity_type] = { label: e.label, items: [] };
+        if (!grouped[e.entity_type].items.includes(e.value)) {
+          grouped[e.entity_type].items.push(e.value);
+        }
+      });
+
+      const entitiesEl = document.getElementById('d-entities');
+      entitiesEl.innerHTML = '';
+      if (Object.keys(grouped).length === 0) {
+        entitiesEl.innerHTML = '<div class="empty">لا توجد كيانات مستخلصة</div>';
+      } else {
+        Object.entries(grouped).forEach(([type, g]) => {
+          const group = document.createElement('div');
+          group.className = 'entity-group';
+          group.innerHTML = `
+            <div class="entity-label">
+              <span>${g.label}</span>
+              <span class="entity-count">${g.items.length}</span>
+            </div>
+            <div class="entity-tags">
+              ${g.items.map(i => `<a href="graph.html?q=${encodeURIComponent(i)}" class="entity-tag tag-${type}" style="text-decoration: none;">${i}</a>`).join('')}
+            </div>
+          `;
+          entitiesEl.appendChild(group);
+        });
+      }
+
+      // Related calls
+      const related = await api.relatedCalls(id);
+      const relatedTbody = document.getElementById('d-related');
+      relatedTbody.innerHTML = '';
+      const relations = ['ذكر نفس الموضوع', 'نفس المتحدثين', 'استكمال', 'تابع زمني'];
+      if (related.length === 0) {
+        relatedTbody.innerHTML = '<tr><td colspan="5"><div class="empty">لا توجد مكالمات مرتبطة</div></td></tr>';
+      } else {
+        related.forEach((rc, i) => {
+          const tr = document.createElement('tr');
+          tr.onclick = () => { showDetail(rc.id); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+          tr.innerHTML = `
+            <td><span class="id-cell">${rc.id}</span></td>
+            <td><div style="font-weight: 500;">${rc.title}</div></td>
+            <td><span class="badge badge-accent">${relations[i % relations.length]}</span></td>
+            <td style="font-family: var(--font-mono); font-size: 12px; color: var(--text-2); direction: ltr;">${rc.date}</td>
+            <td><span style="font-family: var(--font-mono); color: ${confidenceColor(rc.confidence)}; direction: ltr; display: inline-block;">${rc.confidence}%</span></td>
+          `;
+          relatedTbody.appendChild(tr);
+        });
+      }
+
+      listView.style.display = 'none';
+      detailView.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      initTooltips();
+      history.replaceState(null, '', `calls.html?id=${c.id}`);
+    } catch (e) {
+      alert('لا يمكن تحميل المكالمة — تحقق من الخادم');
+    }
+  }
+
+  function showList() {
+    detailView.style.display = 'none';
+    listView.style.display = 'block';
+    history.replaceState(null, '', 'calls.html');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  window.showList = showList;
+
+  renderList();
+
+  const urlId = getQueryParam('id');
+  if (urlId) showDetail(urlId);
+</script>
+
+</body>
+</html>

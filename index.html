@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة التحليل · Call Intelligence Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<main class="app">
+  <section class="page-head">
+    <div>
+      <h1 class="page-title">محرك فهم علاقات <span class="accent-text">صوتية–لغوية–زمنية</span></h1>
+      <p class="page-subtitle">تحويل المكالمات إلى شبكة معرفة مترابطة تكشف الأنماط، تتبع تطور المفردات، وتربط الأشخاص بالأحداث والأزمنة لدعم اتخاذ القرار.</p>
+    </div>
+    <div class="page-meta">
+      <div>LAST SYNC · <strong id="last-sync">—</strong></div>
+      <div style="margin-top: 4px;">SESSION · <strong>#INTEL-8842</strong></div>
+    </div>
+  </section>
+
+  <section class="metrics">
+    <a href="calls.html" class="metric" style="text-decoration: none; color: inherit; cursor: pointer;">
+      <div class="metric-label">// Total Calls</div>
+      <div class="metric-value" id="m-calls">—</div>
+      <div class="metric-delta">LIVE DATA</div>
+    </a>
+    <a href="speakers.html" class="metric" style="text-decoration: none; color: inherit; cursor: pointer;">
+      <div class="metric-label">// Speakers</div>
+      <div class="metric-value" id="m-speakers">—</div>
+      <div class="metric-delta">VOICE PROFILES</div>
+    </a>
+    <a href="graph.html" class="metric" style="text-decoration: none; color: inherit; cursor: pointer;">
+      <div class="metric-label">// Keywords</div>
+      <div class="metric-value" id="m-keywords">—</div>
+      <div class="metric-delta down">◆ TRACKED</div>
+    </a>
+    <a href="reports.html" class="metric" style="text-decoration: none; color: inherit; cursor: pointer;">
+      <div class="metric-label">// Accuracy</div>
+      <div class="metric-value" id="m-accuracy">—</div>
+      <div class="metric-delta">AVG CONFIDENCE</div>
+    </a>
+  </section>
+
+  <section class="workspace">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">آخر المكالمات</div>
+        <a href="calls.html" class="panel-subtitle" style="cursor: pointer; color: var(--accent);">ALL ↗</a>
+      </div>
+      <div class="panel-body" id="calls-list" style="max-height: 480px; overflow-y: auto;"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head" style="padding-bottom: 14px;">
+        <div>
+          <div class="panel-title" id="call-title">—</div>
+          <div class="panel-subtitle" id="call-meta">—</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn">▷ تشغيل</button>
+          <a id="full-view-link" href="calls.html" class="btn primary" style="text-decoration: none;">عرض كامل ↗</a>
+        </div>
+      </div>
+      <div class="panel-body" style="padding-top: 4px;">
+        <div class="waveform" id="waveform"></div>
+        <div class="transcript-lines" id="transcript" style="max-height: 340px; overflow-y: auto;"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">الكيانات المستخلصة</div>
+        <div class="panel-subtitle">NER · NLP</div>
+      </div>
+      <div class="panel-body" id="entities"></div>
+    </div>
+  </section>
+
+  <div class="section-title">
+    <h2><span class="section-accent">//</span>نظرة سريعة</h2>
+    <a href="uploads.html" class="btn primary">+ رفع مكالمة جديدة</a>
+  </div>
+
+  <div class="cards-grid">
+    <a href="calls.html" class="card clickable" style="text-decoration: none; color: inherit;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+        <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--accent-glow); color: var(--accent); display: flex; align-items: center; justify-content: center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600;">المكالمات</div>
+          <div style="font-size: 11px; color: var(--text-3); font-family: var(--font-mono); direction: ltr;">CALLS DATABASE</div>
+        </div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-2); line-height: 1.6;">استعرض كل المكالمات المسجلة، افتح أي مكالمة، واعرض تفريغها الكامل.</div>
+    </a>
+
+    <a href="graph.html" class="card clickable" style="text-decoration: none; color: inherit;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(167,139,250,0.12); color: var(--purple); display: flex; align-items: center; justify-content: center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="7" y2="16"/><line x1="12" y1="8" x2="17" y2="16"/></svg>
+        </div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600;">شبكة المعرفة</div>
+          <div style="font-size: 11px; color: var(--text-3); font-family: var(--font-mono); direction: ltr;">KNOWLEDGE GRAPH</div>
+        </div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-2); line-height: 1.6;">استكشف العلاقات بين الأشخاص والكلمات والأحداث عبر رسم بياني تفاعلي.</div>
+    </a>
+
+    <a href="speakers.html" class="card clickable" style="text-decoration: none; color: inherit;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(251,113,133,0.12); color: var(--coral); display: flex; align-items: center; justify-content: center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600;">المتحدثون</div>
+          <div style="font-size: 11px; color: var(--text-3); font-family: var(--font-mono); direction: ltr;">VOICE PROFILES</div>
+        </div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-2); line-height: 1.6;">قائمة كل المتحدثين ببصماتهم الصوتية، إحصائياتهم، وسجل ظهورهم.</div>
+    </a>
+
+    <a href="reports.html" class="card clickable" style="text-decoration: none; color: inherit;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(245,166,35,0.12); color: var(--amber); display: flex; align-items: center; justify-content: center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600;">التقارير</div>
+          <div style="font-size: 11px; color: var(--text-3); font-family: var(--font-mono); direction: ltr;">REPORTS</div>
+        </div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-2); line-height: 1.6;">كل التقارير اليومية والأسبوعية، تحليلات الأنماط، وتقارير الكشف.</div>
+    </a>
+  </div>
+</main>
+
+<script src="assets/shared.js"></script>
+<script>
+  mountTopbar('index');
+
+  // Set last sync time
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  document.getElementById('last-sync').textContent =
+    `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+  function animateValue(el, target, suffix = '', duration = 1000) {
+    const start = 0;
+    const startTime = performance.now();
+    function update(now) {
+      const p = Math.min((now - startTime) / duration, 1);
+      const v = Math.round(start + (target - start) * p);
+      el.textContent = formatNumber(v) + suffix;
+      if (p < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  }
+
+  // ═══ Load stats from API ═══
+  async function loadStats() {
+    try {
+      const stats = await api.stats();
+      animateValue(document.getElementById('m-calls'), stats.total_calls);
+      animateValue(document.getElementById('m-speakers'), stats.total_speakers);
+      animateValue(document.getElementById('m-keywords'), stats.total_keywords);
+      animateValue(document.getElementById('m-accuracy'), stats.avg_accuracy, '%');
+    } catch (e) {
+      ['m-calls', 'm-speakers', 'm-keywords', 'm-accuracy'].forEach(id => {
+        document.getElementById(id).textContent = '—';
+      });
+    }
+  }
+
+  // ═══ Load calls list ═══
+  async function loadCallsList() {
+    const container = document.getElementById('calls-list');
+    showLoading(container);
+    try {
+      const calls = await api.calls({ limit: 8 });
+      container.innerHTML = '';
+      calls.forEach(c => {
+        const a = document.createElement('a');
+        a.className = 'call-item' + (c.is_active ? ' active' : '');
+        a.href = `calls.html?id=${c.id}`;
+        a.innerHTML = `
+          <div class="call-header">
+            <span class="call-id">${c.id}</span>
+            <span class="call-duration">${c.duration}</span>
+          </div>
+          <div class="call-title">${c.title}</div>
+          <div class="call-meta">
+            <span>${c.date.slice(5)} · ${c.speakers.length}👥</span>
+            <span style="font-family: var(--font-mono); color: ${confidenceColor(c.confidence)};">${c.confidence}%</span>
+          </div>
+          <div class="conf-bar" style="width: 100%; margin-top: 8px;"><div class="conf-fill" style="width: ${c.confidence}%"></div></div>
+        `;
+        container.appendChild(a);
+      });
+    } catch (e) {
+      container.innerHTML = '<div class="empty">لا يمكن تحميل المكالمات</div>';
+    }
+  }
+
+  // ═══ Load active call with transcript ═══
+  async function loadActiveCall() {
+    try {
+      // Fetch all calls and find active one, or use C-003 as default
+      const calls = await api.calls();
+      const active = calls.find(c => c.is_active) || calls[0];
+      if (!active) return;
+
+      const detail = await api.call(active.id);
+      document.getElementById('call-title').textContent = detail.title;
+      document.getElementById('call-meta').textContent =
+        `${detail.id} · ${detail.date} · ${detail.duration} · ${detail.speakers.length} speakers`;
+      document.getElementById('full-view-link').href = `calls.html?id=${detail.id}`;
+
+      buildWaveform('waveform');
+
+      // Render transcript
+      const transcriptEl = document.getElementById('transcript');
+      transcriptEl.innerHTML = '';
+      detail.transcript_lines.forEach(t => {
+        const confClass = t.confidence >= 0.9 ? 'high' : t.confidence >= 0.85 ? 'mid' : 'low';
+        const confPct = Math.round(t.confidence * 100);
+        const div = document.createElement('div');
+        div.className = 'msg';
+        div.innerHTML = `
+          <div class="msg-avatar ${t.speaker_slot}">${t.speaker_name.substring(0,2)}</div>
+          <div class="msg-content">
+            <div class="msg-meta">
+              <span class="msg-speaker">${t.speaker_name}</span>
+              <span class="msg-time">${t.time_stamp}</span>
+              <span class="msg-conf ${confClass}">${confPct}%</span>
+            </div>
+            <div class="msg-text">${t.text}</div>
+          </div>
+        `;
+        transcriptEl.appendChild(div);
+      });
+
+      // Render entities
+      const entitiesEl = document.getElementById('entities');
+      entitiesEl.innerHTML = '';
+
+      // Group entities by type
+      const grouped = {};
+      detail.entities.forEach(e => {
+        if (!grouped[e.entity_type]) grouped[e.entity_type] = { label: e.label, items: [] };
+        if (!grouped[e.entity_type].items.includes(e.value)) {
+          grouped[e.entity_type].items.push(e.value);
+        }
+      });
+
+      Object.entries(grouped).forEach(([type, g]) => {
+        const group = document.createElement('div');
+        group.className = 'entity-group';
+        group.innerHTML = `
+          <div class="entity-label">
+            <span>${g.label}</span>
+            <span class="entity-count">${g.items.length}</span>
+          </div>
+          <div class="entity-tags">
+            ${g.items.map(i => `<a href="graph.html?q=${encodeURIComponent(i)}" class="entity-tag tag-${type}" style="text-decoration: none;">${i}</a>`).join('')}
+          </div>
+        `;
+        entitiesEl.appendChild(group);
+      });
+
+      initTooltips();
+    } catch (e) {
+      document.getElementById('transcript').innerHTML = '<div class="empty">لا يمكن تحميل التفريغ</div>';
+    }
+  }
+
+  // Init
+  loadStats();
+  loadCallsList();
+  loadActiveCall();
+</script>
+
+</body>
+</html>

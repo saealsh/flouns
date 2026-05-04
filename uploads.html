@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>رفع ملف · Call Intelligence Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  .upload-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 16px;
+  }
+  @media (max-width: 1100px) { .upload-layout { grid-template-columns: 1fr; } }
+
+  .drop-zone {
+    border: 2px dashed var(--border-strong);
+    border-radius: 16px;
+    padding: 60px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg-1);
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+  .drop-zone.dragover { transform: scale(1.01); }
+
+  .drop-icon {
+    width: 56px; height: 56px;
+    margin: 0 auto 16px;
+    color: var(--accent);
+    opacity: 0.7;
+  }
+
+  .drop-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .drop-sub {
+    font-size: 13px;
+    color: var(--text-2);
+    margin-bottom: 20px;
+  }
+
+  .format-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 14px;
+  }
+
+  .format-chip {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    background: var(--bg-2);
+    color: var(--text-3);
+    border-radius: 4px;
+    direction: ltr;
+  }
+
+  .file-preview {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-top: 16px;
+    display: none;
+  }
+
+  .file-preview.active { display: block; }
+
+  .file-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .file-row:last-child { border-bottom: none; }
+
+  .file-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .file-icon.audio { background: rgba(167,139,250,0.12); color: var(--purple); }
+  .file-icon.transcript { background: rgba(79,209,197,0.12); color: var(--accent); }
+  .file-icon.error { background: rgba(248,113,133,0.12); color: var(--red); }
+
+  .file-info { flex: 1; min-width: 0; }
+  .file-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-meta { font-size: 11px; color: var(--text-3); font-family: var(--font-mono); direction: ltr; }
+
+  .file-progress {
+    height: 3px;
+    background: var(--bg-3);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .file-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border-radius: 2px;
+    width: 0;
+    transition: width 0.3s;
+  }
+
+  .history-item {
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+
+  .history-item:hover { border-color: var(--border-strong); }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-2);
+    margin-bottom: 6px;
+  }
+  .form-input {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-1);
+    font-family: var(--font-ar);
+    font-size: 13px;
+  }
+  .form-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-2);
+  }
+
+  .checkbox-row input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+  .transcript-preview {
+    background: var(--bg-2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-top: 10px;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .transcript-preview .line { display: flex; gap: 8px; padding: 3px 0; }
+  .transcript-preview .line .spk { color: var(--accent); font-weight: 500; min-width: 50px; }
+  .transcript-preview .line .time { color: var(--text-3); font-family: var(--font-mono); font-size: 11px; direction: ltr; min-width: 40px; }
+</style>
+</head>
+<body>
+
+<main class="app">
+
+  <div id="breadcrumb"></div>
+
+  <section class="page-head">
+    <div>
+      <h1 class="page-title">رفع <span class="accent-text">مكالمة جديدة</span></h1>
+      <p class="page-subtitle">ارفع ملف صوتي أو ملف نص مفرّغ، وسيقوم المحرك بالتحليل التلقائي: استخلاص الكيانات، فصل المتحدثين، واكتشاف الكلمات المشفّرة.</p>
+    </div>
+    <div class="page-meta">
+      <div>UPLOADS · <strong id="upload-count">—</strong></div>
+      <div style="margin-top: 4px;">ENGINE · <strong>AUTO-ANALYZE</strong></div>
+    </div>
+  </section>
+
+  <div class="upload-layout">
+
+    <!-- Upload column -->
+    <div>
+      <div class="drop-zone" id="dropzone" tabindex="0" role="button">
+        <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <div class="drop-title">اسحب الملف هنا أو اضغط للاختيار</div>
+        <div class="drop-sub">يمكنك رفع ملف صوتي أو ملف نص مفرّغ (أكثر من صيغة مدعومة)</div>
+
+        <div style="display: flex; justify-content: center; gap: 24px; margin-top: 20px; font-size: 12px;">
+          <div>
+            <div style="color: var(--purple); font-weight: 500; margin-bottom: 6px;">🎙 صوت</div>
+            <div class="format-chips" id="audio-formats"></div>
+          </div>
+          <div style="width: 1px; background: var(--border);"></div>
+          <div>
+            <div style="color: var(--accent); font-weight: 500; margin-bottom: 6px;">📄 نص</div>
+            <div class="format-chips" id="text-formats"></div>
+          </div>
+        </div>
+
+        <input type="file" id="file-input" style="display: none;">
+      </div>
+
+      <div class="file-preview" id="preview">
+        <div style="font-size: 13px; font-weight: 500; margin-bottom: 12px;">الملف المحدَّد</div>
+        <div id="preview-row"></div>
+      </div>
+
+      <div id="upload-result" style="margin-top: 20px;"></div>
+    </div>
+
+    <!-- Settings + history column -->
+    <div>
+      <div class="panel" style="margin-bottom: 16px;">
+        <div class="panel-head">
+          <div class="panel-title">إعدادات الرفع</div>
+          <div class="panel-subtitle">OPTIONS</div>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label class="form-label" for="title-input">عنوان المكالمة (اختياري)</label>
+            <input type="text" class="form-input" id="title-input" placeholder="سيُشتق من اسم الملف تلقائياً">
+          </div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="create-call-cb" checked>
+            <span>إنشاء مكالمة جديدة بعد التحليل</span>
+          </label>
+
+          <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <button class="btn primary" id="upload-btn" style="width: 100%; justify-content: center;" disabled>
+              ابدأ التحليل ↗
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">الرفعات السابقة</div>
+          <div class="panel-subtitle">HISTORY</div>
+        </div>
+        <div class="panel-body" id="history" style="max-height: 400px; overflow-y: auto;"></div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<script src="assets/shared.js"></script>
+<script>
+  mountTopbar('uploads');
+
+  document.getElementById('breadcrumb').innerHTML = buildBreadcrumb([
+    { label: 'الرئيسية', url: 'index.html' },
+    { label: 'رفع ملف' }
+  ]);
+
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+  const preview = document.getElementById('preview');
+  const previewRow = document.getElementById('preview-row');
+  const uploadBtn = document.getElementById('upload-btn');
+  const resultEl = document.getElementById('upload-result');
+
+  let selectedFile = null;
+  let supportedFormats = { audio: [], transcript: [] };
+
+  // Load supported formats
+  api.supportedFormats().then(f => {
+    supportedFormats = f;
+    document.getElementById('audio-formats').innerHTML =
+      f.audio.map(ext => `<span class="format-chip">${ext}</span>`).join('');
+    document.getElementById('text-formats').innerHTML =
+      f.transcript.map(ext => `<span class="format-chip">${ext}</span>`).join('');
+
+    // Build accept attribute
+    fileInput.accept = [...f.audio, ...f.transcript].join(',');
+  }).catch(() => {});
+
+  // Load history
+  async function loadHistory() {
+    const historyEl = document.getElementById('history');
+    try {
+      const uploads = await api.listUploads();
+      document.getElementById('upload-count').textContent = uploads.length;
+      if (uploads.length === 0) {
+        historyEl.innerHTML = '<div class="empty" style="padding: 20px;">لا توجد رفعات سابقة</div>';
+        return;
+      }
+      historyEl.innerHTML = '';
+      uploads.forEach(u => {
+        const statusBadge = u.processing_status === 'done' ? 'badge-green' :
+                            u.processing_status === 'error' ? 'badge-red' : 'badge-amber';
+        const statusLabel = u.processing_status === 'done' ? '✓ مُحلّل' :
+                            u.processing_status === 'error' ? '✗ خطأ' : '◆ معالجة';
+        const kindIcon = u.kind === 'audio' ? '🎙' : '📄';
+        const sizeKB = (u.size_bytes / 1024).toFixed(1);
+
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 8px;">
+            <span style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+              <span>${kindIcon}</span>
+              <span style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.original_name}</span>
+            </span>
+            <span class="badge ${statusBadge}">${statusLabel}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-3); direction: ltr;">${sizeKB} KB · ${u.extension}</span>
+            ${u.call_id ? `<a href="calls.html?id=${u.call_id}" style="font-size: 11px; color: var(--accent); text-decoration: none;">${u.call_id} ↗</a>` : ''}
+          </div>
+        `;
+        historyEl.appendChild(div);
+      });
+    } catch (e) {
+      historyEl.innerHTML = '<div class="empty" style="padding: 20px;">لا يمكن تحميل السجل</div>';
+    }
+  }
+  loadHistory();
+
+  // ═══ Drag & drop ═══
+  ['dragenter', 'dragover'].forEach(ev => {
+    dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+  });
+  ['dragleave', 'drop'].forEach(ev => {
+    dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); });
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    const file = e.dataTransfer.files[0];
+    if (file) selectFile(file);
+  });
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files[0]) selectFile(e.target.files[0]);
+  });
+
+  function selectFile(file) {
+    selectedFile = file;
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    const isAudio = supportedFormats.audio.includes(ext);
+    const isText = supportedFormats.transcript.includes(ext);
+
+    let iconClass = 'audio';
+    let iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>';
+    let kindLabel = 'صوت';
+    let supported = isAudio;
+
+    if (!isAudio && isText) {
+      iconClass = 'transcript';
+      iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+      kindLabel = 'نص';
+      supported = true;
+    } else if (!isAudio && !isText) {
+      iconClass = 'error';
+      iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+      kindLabel = 'غير مدعوم';
+      supported = false;
+    }
+
+    const sizeKB = (file.size / 1024).toFixed(1);
+    const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+    const sizeDisplay = file.size > 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+
+    previewRow.innerHTML = `
+      <div class="file-row">
+        <div class="file-icon ${iconClass}">${iconSvg}</div>
+        <div class="file-info">
+          <div class="file-name">${file.name}</div>
+          <div class="file-meta" style="direction: ltr;">${sizeDisplay} · ${kindLabel.toUpperCase()} · ${ext}</div>
+          <div class="file-progress" id="progress-bar" style="display: none;"><div class="file-progress-fill" id="progress-fill"></div></div>
+        </div>
+        <button class="btn ghost" onclick="clearFile()" style="flex-shrink: 0;">✕</button>
+      </div>
+      ${!supported ? '<div style="margin-top: 10px; color: var(--red); font-size: 12px;">⚠ هذه الصيغة غير مدعومة</div>' : ''}
+    `;
+    preview.classList.add('active');
+    uploadBtn.disabled = !supported;
+    resultEl.innerHTML = '';
+
+    // Auto-fill title from filename
+    if (!document.getElementById('title-input').value) {
+      const stem = file.name.replace(/\.[^.]+$/, '').substring(0, 50);
+      document.getElementById('title-input').placeholder = stem;
+    }
+  }
+
+  window.clearFile = function() {
+    selectedFile = null;
+    fileInput.value = '';
+    preview.classList.remove('active');
+    uploadBtn.disabled = true;
+    resultEl.innerHTML = '';
+  };
+
+  // ═══ Upload ═══
+  uploadBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    const title = document.getElementById('title-input').value.trim();
+    const createCall = document.getElementById('create-call-cb').checked;
+
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'جارٍ الرفع...';
+    document.getElementById('progress-bar').style.display = 'block';
+    resultEl.innerHTML = '';
+
+    try {
+      const result = await api.uploadFile(selectedFile, {
+        title: title || null,
+        createCall,
+        onProgress: (p) => {
+          document.getElementById('progress-fill').style.width = p + '%';
+        }
+      });
+
+      uploadBtn.textContent = 'ابدأ التحليل ↗';
+      uploadBtn.disabled = false;
+
+      // Success result card
+      let previewHtml = '';
+      if (result.transcript_preview && result.transcript_preview.length) {
+        previewHtml = `
+          <div class="transcript-preview">
+            <div style="font-size: 11px; color: var(--text-3); text-transform: uppercase; font-family: var(--font-mono); margin-bottom: 8px;">معاينة التفريغ</div>
+            ${result.transcript_preview.map(l => `
+              <div class="line">
+                <span class="time">${l.time}</span>
+                <span class="spk">${l.speaker}</span>
+                <span>${l.text}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      resultEl.innerHTML = `
+        <div class="card" style="border-color: var(--accent); background: var(--accent-glow);">
+          <div style="display: flex; align-items: flex-start; gap: 14px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--accent); color: #0a0e14; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div style="flex: 1;">
+              <div style="font-size: 15px; font-weight: 600; margin-bottom: 6px;">✓ تمت المعالجة بنجاح</div>
+              <div style="font-size: 13px; color: var(--text-2); margin-bottom: 10px;">${result.message}</div>
+              ${result.attachment.analysis_notes ? `<div style="font-size: 11px; color: var(--text-3); font-style: italic; margin-bottom: 10px;">${result.attachment.analysis_notes}</div>` : ''}
+              ${previewHtml}
+              ${result.call_id ? `
+                <div style="margin-top: 14px; display: flex; gap: 8px;">
+                  <a href="calls.html?id=${result.call_id}" class="btn primary">فتح المكالمة ${result.call_id} ↗</a>
+                  <button class="btn ghost" onclick="clearFile()">رفع ملف آخر</button>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+
+      loadHistory();
+    } catch (e) {
+      uploadBtn.textContent = 'ابدأ التحليل ↗';
+      uploadBtn.disabled = false;
+      document.getElementById('progress-bar').style.display = 'none';
+
+      resultEl.innerHTML = `
+        <div class="card" style="border-color: var(--red); background: rgba(248,113,133,0.08);">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="color: var(--red); font-size: 20px;">⚠</div>
+            <div>
+              <div style="font-weight: 500; margin-bottom: 4px;">فشل الرفع</div>
+              <div style="font-size: 12px; color: var(--text-2); font-family: var(--font-mono); direction: ltr;">${e.message}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  });
+</script>
+
+</body>
+</html>
