@@ -1,0 +1,26 @@
+[project]
+name = "call-intelligence-engine"
+version = "0.1.0"
+description = "محرك فهم العلاقات الصوتية–اللغوية–الزمنية"
+requires-python = ">=3.10"
+authors = [{ name = "CIE Team" }]
+license = { text = "MIT" }
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
+ignore = ["E501"]  # نتعامل مع طول السطر عبر black
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/tests/*"]

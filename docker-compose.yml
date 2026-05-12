@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    container_name: cie-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+      - ./demo:/app/demo:ro  # للديمو HTML الموجود
+    environment:
+      - CIE_DATA_ROOT=/data
+      - CIE_DEMO_DIR=/app/demo
+      - CIE_WHISPER_BACKEND=${CIE_WHISPER_BACKEND:-mock}
+      - CIE_WHISPER_MODEL=${CIE_WHISPER_MODEL:-tiny}
+      - CIE_CORS_ORIGINS=${CIE_CORS_ORIGINS:-*}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Neo4j اختياري لتخزين رسم المعرفة دائماً
+  # شغّله بـ: docker-compose --profile neo4j up
+  neo4j:
+    image: neo4j:5
+    container_name: cie-neo4j
+    profiles: ["neo4j"]
+    ports:
+      - "7474:7474"  # HTTP UI
+      - "7687:7687"  # Bolt protocol
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-password}
+      - NEO4J_PLUGINS=["apoc"]
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
